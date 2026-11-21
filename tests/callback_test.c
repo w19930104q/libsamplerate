@@ -66,7 +66,7 @@ main (void)
 
 typedef struct
 {	int channels ;
-	long count, total ;
+	long count, total ;	/* frame counts, not interleaved sample counts */
 	int end_of_data ;
 	float data [BUFFER_LEN] ;
 } TEST_CB_DATA ;
@@ -83,12 +83,17 @@ test_callback_func (void *cb_data, float **data)
 	if (data == NULL)
 		return 0 ;
 
-	if (pcb_data->total - pcb_data->count > CB_READ_LEN)
+	/* count and total are frame counts; CB_READ_LEN is a sample count. */
+	if ((pcb_data->total - pcb_data->count) * pcb_data->channels > CB_READ_LEN)
 		frames = CB_READ_LEN / pcb_data->channels ;
 	else
-		frames = (pcb_data->total - pcb_data->count) / pcb_data->channels ;
+		frames = pcb_data->total - pcb_data->count ;
 
-	*data = pcb_data->data + pcb_data->count ;
+	/* The data pointer is offset in interleaved samples, so multiply the
+	** frame position by the channel count. Using the frame count directly
+	** as a sample offset made the callback feed overlapping windows and its
+	** reported length depend on the channel count. */
+	*data = pcb_data->data + pcb_data->count * pcb_data->channels ;
 	pcb_data->count += frames ;
 
 	return frames ;
@@ -111,7 +116,7 @@ callback_test (int converter, double src_ratio)
 	test_callback_data.channels = 2 ;
 	test_callback_data.count = 0 ;
 	test_callback_data.end_of_data = 0 ;
-	test_callback_data.total = ARRAY_LEN (test_callback_data.data) ;
+	test_callback_data.total = ARRAY_LEN (test_callback_data.data) / test_callback_data.channels ;
 
 	if ((src_state = src_callback_new (test_callback_func, converter, test_callback_data.channels, &error, &test_callback_data)) == NULL)
 	{	printf ("\n\nLine %d : %s\n\n", __LINE__, src_strerror (error)) ;
@@ -134,11 +139,18 @@ callback_test (int converter, double src_ratio)
 
 	src_delete (src_state) ;
 
-	if (fabs (read_total / src_ratio - ARRAY_LEN (test_callback_data.data)) > 2.0)
+	/*
+	** Both read_total and the input length below are frame counts, so the
+	** two-frame tolerance has the same meaning at every src_ratio. The
+	** expected output length is simply the input frame count times the
+	** ratio; a difference of at most two frames covers rounding and the
+	** sinc converter's end-of-stream filter window.
+	*/
+	if (fabs (read_total - src_ratio * test_callback_data.total) > 2.0)
 	{	printf ("\n\nLine %d : input / output length mismatch.\n\n", __LINE__) ;
-		printf ("    input len  : %d\n", ARRAY_LEN (test_callback_data.data)) ;
+		printf ("    input len  : %ld frames\n", test_callback_data.total) ;
 		printf ("    output len : %ld (should be %g +/- 2)\n\n", read_total,
-					floor (0.5 + src_ratio * ARRAY_LEN (test_callback_data.data))) ;
+					floor (0.5 + src_ratio * test_callback_data.total)) ;
 		exit (1) ;
 		} ;
 
@@ -170,12 +182,15 @@ eos_callback_func (void *cb_data, float **data)
 	if (pcb_data->end_of_data)
 		return 0 ;
 
-	if (pcb_data->total - pcb_data->count > CB_READ_LEN)
+	/* count and total are frame counts; CB_READ_LEN is a sample count. */
+	if ((pcb_data->total - pcb_data->count) * pcb_data->channels > CB_READ_LEN)
 		frames = CB_READ_LEN / pcb_data->channels ;
 	else
-		frames = (pcb_data->total - pcb_data->count) / pcb_data->channels ;
+		frames = pcb_data->total - pcb_data->count ;
 
-	*data = pcb_data->data + pcb_data->count ;
+	/* Offset the interleaved data pointer by the frame position times the
+	** channel count. */
+	*data = pcb_data->data + pcb_data->count * pcb_data->channels ;
 	pcb_data->count += frames ;
 
 	/*
@@ -206,7 +221,7 @@ end_of_stream_test (int converter)
 	test_callback_data.channels = 2 ;
 	test_callback_data.count = 0 ;
 	test_callback_data.end_of_data = 0 ;
-	test_callback_data.total = ARRAY_LEN (test_callback_data.data) ;
+	test_callback_data.total = ARRAY_LEN (test_callback_data.data) / test_callback_data.channels ;
 
 	if ((src_state = src_callback_new (eos_callback_func, converter, test_callback_data.channels, &error, &test_callback_data)) == NULL)
 	{	printf ("\n\nLine %d : %s\n\n", __LINE__, src_strerror (error)) ;

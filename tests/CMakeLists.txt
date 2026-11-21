@@ -61,6 +61,10 @@ target_link_libraries(multi_channel_test
    )
 add_test(NAME multi_channel_test COMMAND multi_channel_test WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src)
 
+add_executable(frame_count_test frame_count_test.c util.c util.h)
+target_link_libraries(frame_count_test PRIVATE samplerate)
+add_test(NAME frame_count_test COMMAND frame_count_test WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src)
+
 add_executable(varispeed_test varispeed_test.c calc_snr.c util.c util.h)
 target_link_libraries(varispeed_test
   PRIVATE samplerate

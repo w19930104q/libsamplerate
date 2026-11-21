@@ -483,9 +483,18 @@ sinc_mono_vari_process (SRC_STATE *state, SRC_DATA *data)
 				break ;
 			} ;
 
-		/* This is the termination condition. */
+		/*
+		** This is the termination condition. b_current and b_real_end are
+		** interleaved-sample indices while input_index and terminate are
+		** frame positions, so the comparison has to be done in frame units;
+		** comparing them directly made the termination decision depend on
+		** the channel count. The strict inequality matches the mono
+		** interpolator's original semantics: keep producing output frames
+		** while the next interpolation centre is still on real input and
+		** stop only once it has moved past the end of the real data.
+		*/
 		if (filter->b_real_end >= 0)
-		{	if (filter->b_current + input_index + terminate > filter->b_real_end)
+		{	if (filter->b_current / state->channels + input_index + terminate > filter->b_real_end / state->channels)
 				break ;
 			} ;
 
@@ -639,9 +648,18 @@ sinc_stereo_vari_process (SRC_STATE *state, SRC_DATA *data)
 				break ;
 			} ;
 
-		/* This is the termination condition. */
+		/*
+		** This is the termination condition. b_current and b_real_end are
+		** interleaved-sample indices while input_index and terminate are
+		** frame positions, so the comparison has to be done in frame units;
+		** comparing them directly made the termination decision depend on
+		** the channel count. The strict inequality matches the mono
+		** interpolator's original semantics: keep producing output frames
+		** while the next interpolation centre is still on real input and
+		** stop only once it has moved past the end of the real data.
+		*/
 		if (filter->b_real_end >= 0)
-		{	if (filter->b_current + input_index + terminate >= filter->b_real_end)
+		{	if (filter->b_current / state->channels + input_index + terminate > filter->b_real_end / state->channels)
 				break ;
 			} ;
 
@@ -795,9 +813,18 @@ sinc_quad_vari_process (SRC_STATE *state, SRC_DATA *data)
 				break ;
 			} ;
 
-		/* This is the termination condition. */
+		/*
+		** This is the termination condition. b_current and b_real_end are
+		** interleaved-sample indices while input_index and terminate are
+		** frame positions, so the comparison has to be done in frame units;
+		** comparing them directly made the termination decision depend on
+		** the channel count. The strict inequality matches the mono
+		** interpolator's original semantics: keep producing output frames
+		** while the next interpolation centre is still on real input and
+		** stop only once it has moved past the end of the real data.
+		*/
 		if (filter->b_real_end >= 0)
-		{	if (filter->b_current + input_index + terminate >= filter->b_real_end)
+		{	if (filter->b_current / state->channels + input_index + terminate > filter->b_real_end / state->channels)
 				break ;
 			} ;
 
@@ -950,9 +977,18 @@ sinc_hex_vari_process (SRC_STATE *state, SRC_DATA *data)
 				break ;
 			} ;
 
-		/* This is the termination condition. */
+		/*
+		** This is the termination condition. b_current and b_real_end are
+		** interleaved-sample indices while input_index and terminate are
+		** frame positions, so the comparison has to be done in frame units;
+		** comparing them directly made the termination decision depend on
+		** the channel count. The strict inequality matches the mono
+		** interpolator's original semantics: keep producing output frames
+		** while the next interpolation centre is still on real input and
+		** stop only once it has moved past the end of the real data.
+		*/
 		if (filter->b_real_end >= 0)
-		{	if (filter->b_current + input_index + terminate >= filter->b_real_end)
+		{	if (filter->b_current / state->channels + input_index + terminate > filter->b_real_end / state->channels)
 				break ;
 			} ;
 
@@ -1115,9 +1151,18 @@ sinc_multichan_vari_process (SRC_STATE *state, SRC_DATA *data)
 				break ;
 			} ;
 
-		/* This is the termination condition. */
+		/*
+		** This is the termination condition. b_current and b_real_end are
+		** interleaved-sample indices while input_index and terminate are
+		** frame positions, so the comparison has to be done in frame units;
+		** comparing them directly made the termination decision depend on
+		** the channel count. The strict inequality matches the mono
+		** interpolator's original semantics: keep producing output frames
+		** while the next interpolation centre is still on real input and
+		** stop only once it has moved past the end of the real data.
+		*/
 		if (filter->b_real_end >= 0)
-		{	if (filter->b_current + input_index + terminate >= filter->b_real_end)
+		{	if (filter->b_current / state->channels + input_index + terminate > filter->b_real_end / state->channels)
 				break ;
 			} ;
 

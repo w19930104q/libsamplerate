@@ -80,10 +80,22 @@ zoh_vari_process (SRC_STATE *state, SRC_DATA *data)
 
 	input_index = state->last_position ;
 
+	/*
+	** Frame level bookkeeping. All loop guards use frame units (rather
+	** than interleaved-sample units) so that the floating point position
+	** calculations are independent of the channel count. Scaling the
+	** position values by the channel count previously made rounding
+	** decisions depend on the number of channels, which made the reported
+	** input_frames_used / output_frames_gen differ between otherwise
+	** identical mono and multi-channel frame streams.
+	*/
+	long in_frames = data->input_frames ;
+	long in_frames_used = 0 ;
+
 	/* Calculate samples before first sample in input array. */
 	while (input_index < 1.0 && priv->out_gen < priv->out_count)
 	{
-		if (priv->in_used + state->channels * input_index >= priv->in_count)
+		if (in_frames_used + input_index >= in_frames)
 			break ;
 
 		if (priv->out_count > 0 && fabs (state->last_ratio - data->src_ratio) > SRC_MIN_RATIO_DIFF)
@@ -99,11 +111,12 @@ zoh_vari_process (SRC_STATE *state, SRC_DATA *data)
 		} ;
 
 	rem = fmod_one (input_index) ;
-	priv->in_used += state->channels * psf_lrint (input_index - rem) ;
+	in_frames_used += psf_lrint (input_index - rem) ;
 	input_index = rem ;
+	priv->in_used = in_frames_used * state->channels ;
 
 	/* Main processing loop. */
-	while (priv->out_gen < priv->out_count && priv->in_used + state->channels * input_index <= priv->in_count)
+	while (priv->out_gen < priv->out_count && in_frames_used + input_index <= in_frames)
 	{
 		if (priv->out_count > 0 && fabs (state->last_ratio - data->src_ratio) > SRC_MIN_RATIO_DIFF)
 			src_ratio = state->last_ratio + priv->out_gen * (data->src_ratio - state->last_ratio) / priv->out_count ;
@@ -117,25 +130,27 @@ zoh_vari_process (SRC_STATE *state, SRC_DATA *data)
 		input_index += 1.0 / src_ratio ;
 		rem = fmod_one (input_index) ;
 
-		priv->in_used += state->channels * psf_lrint (input_index - rem) ;
+		in_frames_used += psf_lrint (input_index - rem) ;
 		input_index = rem ;
+		priv->in_used = in_frames_used * state->channels ;
 		} ;
 
-	if (priv->in_used > priv->in_count)
-	{	input_index += (priv->in_used - priv->in_count) / state->channels ;
-		priv->in_used = priv->in_count ;
+	if (in_frames_used > in_frames)
+	{	input_index += in_frames_used - in_frames ;
+		in_frames_used = in_frames ;
+		priv->in_used = in_frames_used * state->channels ;
 		} ;
 
 	state->last_position = input_index ;
 
-	if (priv->in_used > 0)
+	if (in_frames_used > 0)
 		for (ch = 0 ; ch < state->channels ; ch++)
 			priv->last_value [ch] = data->data_in [priv->in_used - state->channels + ch] ;
 
 	/* Save current ratio rather then target ratio. */
 	state->last_ratio = src_ratio ;
 
-	data->input_frames_used = priv->in_used / state->channels ;
+	data->input_frames_used = in_frames_used ;
 	data->output_frames_gen = priv->out_gen / state->channels ;
 
 	return SRC_ERR_NO_ERROR ;
