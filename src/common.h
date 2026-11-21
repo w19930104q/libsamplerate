@@ -57,6 +57,13 @@
 #define	SRC_MAX_RATIO			256
 #define	SRC_MAX_RATIO_STR		"256"
 
+/* Customise max channels from Kconfig. */
+#ifndef CONFIG_CHAN_NR
+#define MAX_CHANNELS			128
+#else
+#define MAX_CHANNELS			CONFIG_CHAN_NR
+#endif
+
 #define	SRC_MIN_RATIO_DIFF		(1e-20)
 
 #ifndef MAX

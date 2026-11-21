@@ -19,6 +19,7 @@ set(HAVE_FFTW3 ${FFTW3_FOUND} PARENT_SCOPE)
 
 add_executable(misc_test misc_test.c util.c util.h)
 target_link_libraries(misc_test PRIVATE samplerate)
+target_include_directories(misc_test PRIVATE ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME misc_test COMMAND misc_test WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src)
 
 add_executable(termination_test termination_test.c util.c util.h)

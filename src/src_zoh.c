@@ -185,8 +185,13 @@ zoh_data_new (int channels)
 LIBSAMPLERATE_DLL_PRIVATE SRC_STATE *
 zoh_state_new (int channels, SRC_ERROR *error)
 {
-	assert (channels > 0) ;
 	assert (error != NULL) ;
+
+	if (channels < 1 || channels > MAX_CHANNELS)
+	{
+		*error = SRC_ERR_BAD_CHANNEL_COUNT ;
+		return NULL ;
+	}
 
 	SRC_STATE *state = (SRC_STATE *) calloc (1, sizeof (SRC_STATE)) ;
 	if (!state)

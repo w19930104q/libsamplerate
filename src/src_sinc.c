@@ -29,13 +29,6 @@
 #define	FP_ONE					((double) (((increment_t) 1) << SHIFT_BITS))
 #define	INV_FP_ONE				(1.0 / FP_ONE)
 
-/* Customixe max channls from Kconfig. */
-#ifndef CONFIG_CHAN_NR
-#define MAX_CHANNELS			128
-#else
-#define MAX_CHANNELS 			CONFIG_CHAN_NR
-#endif
-
 /*========================================================================================
 */
 
@@ -263,10 +256,9 @@ sinc_state_new (int converter_type, int channels, SRC_ERROR *error)
 	assert (converter_type == SRC_SINC_FASTEST ||
 		converter_type == SRC_SINC_MEDIUM_QUALITY ||
 		converter_type == SRC_SINC_BEST_QUALITY) ;
-	assert (channels > 0) ;
 	assert (error != NULL) ;
 
-	if (channels > MAX_CHANNELS)
+	if (channels < 1 || channels > MAX_CHANNELS)
 	{
 		*error = SRC_ERR_BAD_CHANNEL_COUNT ;
 		return NULL ;

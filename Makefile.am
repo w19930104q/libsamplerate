@@ -2,7 +2,7 @@
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-werror
 
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/src
 
 EXTRA_DIST = README.md autogen.sh libsamplerate.spec.in samplerate.pc.in  \
     Octave/generate_filter.m Octave/make_filter.m Octave/measure_filter.m \

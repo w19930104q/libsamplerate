@@ -110,19 +110,18 @@ src_process (SRC_STATE *state, SRC_DATA *data)
 	if (data->output_frames < 0)
 		data->output_frames = 0 ;
 
-	if (data->data_in < data->data_out)
-	{	if (data->data_in + data->input_frames * state->channels > data->data_out)
-		{	/*-printf ("\n\ndata_in: %p    data_out: %p\n",
-				(void*) (data->data_in + data->input_frames * psrc->channels), (void*) data->data_out) ;-*/
-			return SRC_ERR_DATA_OVERLAP ;
-			} ;
-		}
-	else if (data->data_out + data->output_frames * state->channels > data->data_in)
-	{	/*-printf ("\n\ndata_in : %p   ouput frames: %ld    data_out: %p\n", (void*) data->data_in, data->output_frames, (void*) data->data_out) ;
+	/* Check that the input and output buffers do not overlap. The addresses
+	** are compared as integers because relational comparison of pointers to
+	** different objects and out-of-bounds pointer arithmetic are both
+	** undefined behaviour (and hence miscompile or trip UBSan). */
+	if (data->data_in != NULL && data->data_out != NULL)
+	{	uintptr_t in_start = (uintptr_t) data->data_in ;
+		uintptr_t out_start = (uintptr_t) data->data_out ;
+		uintptr_t in_end = in_start + (uintptr_t) data->input_frames * state->channels * sizeof (float) ;
+		uintptr_t out_end = out_start + (uintptr_t) data->output_frames * state->channels * sizeof (float) ;
 
-		printf ("data_out: %p (%p)    data_in: %p\n", (void*) data->data_out,
-			(void*) (data->data_out + data->input_frames * psrc->channels), (void*) data->data_in) ;-*/
-		return SRC_ERR_DATA_OVERLAP ;
+		if (in_start < out_end && out_start < in_end)
+			return SRC_ERR_DATA_OVERLAP ;
 		} ;
 
 	/* Set the input and output counts to zero. */
@@ -371,7 +370,7 @@ src_strerror (int error)
 		case SRC_ERR_BAD_CONVERTER :
 				return "Bad converter number." ;
 		case SRC_ERR_BAD_CHANNEL_COUNT :
-				return "Channel count must be >= 1." ;
+				return "Channel count must be >= 1 and <= MAX_CHANNELS." ;
 		case SRC_ERR_SINC_BAD_BUFFER_LEN :
 				return "Internal error. Bad buffer length. Please report this." ;
 		case SRC_ERR_SIZE_INCOMPATIBILITY :
@@ -491,6 +490,16 @@ psrc_set_converter (int converter_type, int channels, int *error)
 {
 	SRC_ERROR temp_error;
 	SRC_STATE *state ;
+
+	/* Validate the channel count here, before dispatching to a converter,
+	** so that all entry points (src_new, src_simple, src_callback_new)
+	** return an error instead of hitting an assert or undefined state. */
+	if (channels < 1 || channels > MAX_CHANNELS)
+	{	if (error)
+			*error = SRC_ERR_BAD_CHANNEL_COUNT ;
+		return NULL ;
+		}
+
 	switch (converter_type)
 	{
 #ifdef ENABLE_SINC_BEST_CONVERTER
