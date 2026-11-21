@@ -84,9 +84,11 @@ TESTS = \
 	tests/clone_test \
 	tests/downsample_test \
 	tests/float_short_test \
+	tests/linear_matrix_test \
 	tests/misc_test \
 	tests/multi_channel_test \
 	tests/nullptr_test \
+	tests/ratio_bounds_test \
 	tests/reset_test \
 	tests/simple_test \
 	tests/snr_bw_test \
@@ -129,6 +131,12 @@ tests_callback_test_LDADD = src/libsamplerate.la
 
 tests_float_short_test_SOURCES = tests/float_short_test.c tests/util.c tests/util.h
 tests_float_short_test_LDADD = src/libsamplerate.la
+
+tests_ratio_bounds_test_SOURCES = tests/ratio_bounds_test.c tests/util.c tests/util.h
+tests_ratio_bounds_test_LDADD = src/libsamplerate.la
+
+tests_linear_matrix_test_SOURCES = tests/linear_matrix_test.c tests/util.c tests/util.h
+tests_linear_matrix_test_LDADD = src/libsamplerate.la
 
 tests_downsample_test_SOURCES = tests/downsample_test.c tests/util.c tests/util.h
 tests_downsample_test_LDADD = src/libsamplerate.la

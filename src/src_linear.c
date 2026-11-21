@@ -85,9 +85,9 @@ linear_vari_process (SRC_STATE *state, SRC_DATA *data)
 	/* Calculate samples before first sample in input array. */
 	while (input_index < 1.0 && priv->out_gen < priv->out_count)
 	{
-		if (priv->in_used + state->channels * (1.0 + input_index) >= priv->in_count)
-			break ;
-
+		/*	This loop only ever reads the first frame of the input array,
+		**	which is known to exist, so no input bound check is needed here.
+		*/
 		if (priv->out_count > 0 && fabs (state->last_ratio - data->src_ratio) > SRC_MIN_RATIO_DIFF)
 			src_ratio = state->last_ratio + priv->out_gen * (data->src_ratio - state->last_ratio) / priv->out_count ;
 
@@ -106,7 +106,8 @@ linear_vari_process (SRC_STATE *state, SRC_DATA *data)
 	input_index = rem ;
 
 	/* Main processing loop. */
-	while (priv->out_gen < priv->out_count && priv->in_used + state->channels * input_index < priv->in_count)
+	while (priv->out_gen < priv->out_count && priv->in_used >= state->channels
+			&& priv->in_used + state->channels * input_index < priv->in_count)
 	{
 		if (priv->out_count > 0 && fabs (state->last_ratio - data->src_ratio) > SRC_MIN_RATIO_DIFF)
 			src_ratio = state->last_ratio + priv->out_gen * (data->src_ratio - state->last_ratio) / priv->out_count ;

@@ -244,7 +244,10 @@ fmod_one (double x)
 
 static inline int
 is_bad_src_ratio (double ratio)
-{	return (ratio < (1.0 / SRC_MAX_RATIO) || ratio > (1.0 * SRC_MAX_RATIO)) ;
+{	/* NaN fails both comparisons below, so check for non-finite explicitly. */
+	return (! isfinite (ratio)
+			|| ratio < (1.0 / SRC_MAX_RATIO)
+			|| ratio > (1.0 * SRC_MAX_RATIO)) ;
 } /* is_bad_src_ratio */
 
 
