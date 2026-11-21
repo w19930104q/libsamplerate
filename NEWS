@@ -1,3 +1,11 @@
+Unreleased
+  * Add src_get_frames_consumed(), src_get_frames_generated() and
+    src_get_current_ratio() query functions which report the cumulative
+    input/output frame counts and the current conversion ratio with double
+    precision, for both the callback and the full (src_process) APIs.
+    Exported under the new libsamplerate.so.0.3 version node; ABI remains
+    backward compatible.
+
 Version 0.2.2 (2021-09-05)
   * Fix CMake overlinking for examples (#146)
   * Switch to GCC's visibility for hiding more implementation details

@@ -20,6 +20,10 @@ long src_callback_read (SRC_STATE *state, double src_ratio,
 
 int src_reset (SRC_STATE *state) ;
 int src_set_ratio (SRC_STATE *state, double new_ratio) ;
+
+int src_get_frames_consumed (SRC_STATE *state, double *frames) ;
+int src_get_frames_generated (SRC_STATE *state, double *frames) ;
+int src_get_current_ratio (SRC_STATE *state, double *ratio) ;
 ```
 
 Like the [simple API](api_simple.md) and the [full API](api_full.md), the
@@ -86,3 +90,46 @@ error has occurred, the function [src_error](api_misc.md#error-reporting)
 will return non-zero.
 
 See also : [**src_set_ratio**](api_full.md#set-ratio)
+
+## Stream Statistics
+
+```c
+int src_get_frames_consumed (SRC_STATE *state, double *frames) ;
+int src_get_frames_generated (SRC_STATE *state, double *frames) ;
+int src_get_current_ratio (SRC_STATE *state, double *ratio) ;
+```
+
+Since **src_callback_read** only reports the number of output frames generated
+by each individual call as a **long**, applications converting long streams
+have no precise way of knowing where in the input stream the converter
+currently is. The three functions above fill that gap. They can be called at
+any time and report, with double precision :
+
+- **src_get_frames_consumed** : the cumulative number of input frames the
+  converter has consumed so far.
+- **src_get_frames_generated** : the cumulative number of output frames the
+  converter has generated so far.
+- **src_get_current_ratio** : the conversion ratio currently in effect (the
+  ratio of the most recent **src_callback_read** call, or the value set by
+  the most recent [**src_set_ratio**](api_full.md#set-ratio) call).
+
+The counters are updated by **src_process**, which **src_callback_read** is
+implemented on top of, so they use exactly the same accounting as the
+**input_frames_used** and **output_frames_gen** fields of the
+[**SRC_DATA**](api_misc.md#src_data) struct. The functions therefore work
+with converters created by [src_new](api_full.md#initialisation) (full API)
+as well.
+
+The counters are exact, not approximations : they accumulate the integer
+per-call frame counts in double precision, which is exact for any count
+below 2^53 frames (over 6 years of audio at 48 kHz). They are reset to zero
+by **src_reset**.
+
+Each function returns zero on success and non-zero on error (a NULL
+**state** or NULL destination pointer). The actual average conversion ratio
+achieved over a stream can be computed by the caller as
+`generated / consumed`.
+
+An example of the use of these functions can be found in the
+**varispeed-play** program in the **examples/** directory of the source code
+tarball.

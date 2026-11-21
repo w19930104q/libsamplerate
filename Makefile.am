@@ -80,6 +80,7 @@ endif
 
 TESTS = \
 	tests/callback_hang_test \
+	tests/callback_stats_test \
 	tests/callback_test \
 	tests/clone_test \
 	tests/downsample_test \
@@ -126,6 +127,9 @@ tests_snr_bw_test_LDADD = src/libsamplerate.la $(FFTW3_LIBS)
 
 tests_callback_test_SOURCES = tests/callback_test.c tests/util.c tests/util.h
 tests_callback_test_LDADD = src/libsamplerate.la
+
+tests_callback_stats_test_SOURCES = tests/callback_stats_test.c tests/util.c tests/util.h
+tests_callback_stats_test_LDADD = src/libsamplerate.la
 
 tests_float_short_test_SOURCES = tests/float_short_test.c tests/util.c tests/util.h
 tests_float_short_test_LDADD = src/libsamplerate.la

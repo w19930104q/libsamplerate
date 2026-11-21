@@ -170,6 +170,16 @@ struct SRC_STATE_tag
 	long			saved_frames ;
 	const float		*saved_data ;
 
+	/*
+	** Cumulative stream statistics, updated by src_process() (and hence
+	** also by src_callback_read(), which is built on src_process()).
+	** The frame counters accumulate integer frame counts in double
+	** precision, which is exact for any total below 2^53 frames.
+	*/
+	double			total_input_frames_used ;
+	double			total_output_frames_gen ;
+	double			current_ratio ;
+
 	/* Pointer to data to converter specific data. */
 	void	*private_data ;
 } ;

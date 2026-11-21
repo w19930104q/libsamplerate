@@ -144,3 +144,14 @@ starting conversion ratio of the next call to **src_process** or
 
 This function returns non-zero on error and the error return value can be
 decoded into a text string using the function documented [here](api_misc.md#error-reporting).
+
+## Stream Statistics
+
+The cumulative number of input frames consumed and output frames generated
+by **src_process**, as well as the conversion ratio currently in effect, can
+be retrieved at any time with double precision using the
+[stream statistics query functions](api_callback.md#stream-statistics)
+(**src_get_frames_consumed**, **src_get_frames_generated** and
+**src_get_current_ratio**). The counters use exactly the same accounting as
+the **input_frames_used** and **output_frames_gen** fields of the
+[**SRC_DATA**](api_misc.md#src_data) struct and are reset by **src_reset**.

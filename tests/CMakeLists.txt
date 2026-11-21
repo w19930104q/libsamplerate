@@ -41,6 +41,10 @@ add_executable(callback_test callback_test.c util.c util.h)
 target_link_libraries(callback_test PRIVATE samplerate)
 add_test(NAME callback_test COMMAND callback_test WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src)
 
+add_executable(callback_stats_test callback_stats_test.c util.c util.h)
+target_link_libraries(callback_stats_test PRIVATE samplerate)
+add_test(NAME callback_stats_test COMMAND callback_stats_test WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src)
+
 add_executable(reset_test reset_test.c util.c util.h)
 target_link_libraries(reset_test PRIVATE samplerate)
 add_test(NAME reset_test COMMAND reset_test WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src)

@@ -157,6 +157,28 @@ varispeed_play (const char *filename, int converter)
 	/* Pass the data and the callbacl function to audio_play */
 	audio_play ((get_audio_callback_t) varispeed_get_data, audio_out, &data) ;
 
+	/*
+	** Demonstrate the double precision stream statistics query API :
+	** report exactly how many input frames were consumed and output
+	** frames were generated during playback, plus the current ratio.
+	*/
+	{	double	consumed, generated, ratio ;
+
+		if (src_get_frames_consumed (data.src_state, &consumed) == 0
+				&& src_get_frames_generated (data.src_state, &generated) == 0
+				&& src_get_current_ratio (data.src_state, &ratio) == 0)
+			printf (
+				"\n"
+				"  Stream statistics :\n"
+				"    Input frames consumed   : %.1f\n"
+				"    Output frames generated : %.1f\n"
+				"    Measured average ratio  : %.6f\n"
+				"    Current ratio           : %.6f\n"
+				"\n",
+				consumed, generated,
+				consumed > 0.0 ? generated / consumed : 0.0, ratio) ;
+		} ;
+
 	/* Cleanup */
 	audio_close (audio_out) ;
 	sf_close (data.sf.sndfile) ;

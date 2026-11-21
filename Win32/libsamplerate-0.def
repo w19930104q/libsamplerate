@@ -28,3 +28,7 @@ src_int_to_float_array		@80
 src_float_to_int_array		@81
 
 src_get_channels		@90
+
+src_get_frames_consumed	@91
+src_get_frames_generated	@92
+src_get_current_ratio		@93

@@ -139,6 +139,18 @@ src_process (SRC_STATE *state, SRC_DATA *data)
 	else
 		error = state->vt->vari_process (state, data) ;
 
+	if (error == SRC_ERR_NO_ERROR)
+	{	/*
+		** Accumulate the per-call integer frame counts in double
+		** precision. Every addend is a non-negative integer frame count
+		** and every partial sum stays well below 2^53, so each addition
+		** is exact and the totals match integer accounting exactly.
+		*/
+		state->total_input_frames_used += (double) data->input_frames_used ;
+		state->total_output_frames_gen += (double) data->output_frames_gen ;
+		state->current_ratio = data->src_ratio ;
+		} ;
+
 	return error ;
 } /* src_process */
 
@@ -247,6 +259,7 @@ src_set_ratio (SRC_STATE *state, double new_ratio)
 		return SRC_ERR_BAD_SRC_RATIO ;
 
 	state->last_ratio = new_ratio ;
+	state->current_ratio = new_ratio ;
 
 	return SRC_ERR_NO_ERROR ;
 } /* src_set_ratio */
@@ -261,6 +274,48 @@ src_get_channels (SRC_STATE *state)
 } /* src_get_channels */
 
 int
+src_get_frames_consumed (SRC_STATE *state, double *frames)
+{
+	if (state == NULL)
+		return SRC_ERR_BAD_STATE ;
+
+	if (frames == NULL)
+		return SRC_ERR_BAD_DATA_PTR ;
+
+	*frames = state->total_input_frames_used ;
+
+	return SRC_ERR_NO_ERROR ;
+} /* src_get_frames_consumed */
+
+int
+src_get_frames_generated (SRC_STATE *state, double *frames)
+{
+	if (state == NULL)
+		return SRC_ERR_BAD_STATE ;
+
+	if (frames == NULL)
+		return SRC_ERR_BAD_DATA_PTR ;
+
+	*frames = state->total_output_frames_gen ;
+
+	return SRC_ERR_NO_ERROR ;
+} /* src_get_frames_generated */
+
+int
+src_get_current_ratio (SRC_STATE *state, double *ratio)
+{
+	if (state == NULL)
+		return SRC_ERR_BAD_STATE ;
+
+	if (ratio == NULL)
+		return SRC_ERR_BAD_DATA_PTR ;
+
+	*ratio = state->current_ratio ;
+
+	return SRC_ERR_NO_ERROR ;
+} /* src_get_current_ratio */
+
+int
 src_reset (SRC_STATE *state)
 {
 	if (state == NULL)
@@ -273,6 +328,10 @@ src_reset (SRC_STATE *state)
 
 	state->saved_data = NULL ;
 	state->saved_frames = 0 ;
+
+	state->total_input_frames_used = 0.0 ;
+	state->total_output_frames_gen = 0.0 ;
+	state->current_ratio = 0.0 ;
 
 	state->error = SRC_ERR_NO_ERROR ;
 

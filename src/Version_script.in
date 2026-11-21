@@ -43,3 +43,11 @@
 	global:
 		src_clone ;
 } @PACKAGE@.so.0.1;
+
+@PACKAGE@.so.0.3
+{
+	global:
+		src_get_frames_consumed ;
+		src_get_frames_generated ;
+		src_get_current_ratio ;
+} @PACKAGE@.so.0.2;
