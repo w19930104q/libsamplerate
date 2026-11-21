@@ -491,6 +491,13 @@ psrc_set_converter (int converter_type, int channels, int *error)
 {
 	SRC_ERROR temp_error;
 	SRC_STATE *state ;
+
+	if (channels < 1)
+	{	if (error)
+			*error = SRC_ERR_BAD_CHANNEL_COUNT ;
+		return NULL ;
+		}
+
 	switch (converter_type)
 	{
 #ifdef ENABLE_SINC_BEST_CONVERTER

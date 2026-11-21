@@ -79,6 +79,7 @@ endif
 ##########
 
 TESTS = \
+	tests/boundary_test \
 	tests/callback_hang_test \
 	tests/callback_test \
 	tests/clone_test \
@@ -100,6 +101,9 @@ check_PROGRAMS = \
 	tests/src-evaluate
 
 #===============================================================================
+
+tests_boundary_test_SOURCES = tests/boundary_test.c
+tests_boundary_test_LDADD = src/libsamplerate.la
 
 tests_misc_test_SOURCES = tests/misc_test.c tests/util.c tests/util.h
 tests_misc_test_LDADD = src/libsamplerate.la

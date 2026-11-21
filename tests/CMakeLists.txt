@@ -17,6 +17,10 @@ endif()
 
 set(HAVE_FFTW3 ${FFTW3_FOUND} PARENT_SCOPE)
 
+add_executable(boundary_test boundary_test.c)
+target_link_libraries(boundary_test PRIVATE samplerate)
+add_test(NAME boundary_test COMMAND boundary_test WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src)
+
 add_executable(misc_test misc_test.c util.c util.h)
 target_link_libraries(misc_test PRIVATE samplerate)
 add_test(NAME misc_test COMMAND misc_test WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src)
