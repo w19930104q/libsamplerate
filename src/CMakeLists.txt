@@ -137,15 +137,31 @@ if(LIBSAMPLERATE_INSTALL)
   # pkg-config module
 
   if(LIBSAMPLERATE_INSTALL_PKGCONFIG_MODULE)
-    set(prefix ${CMAKE_INSTALL_PREFIX})
-    set(exec_prefix "\${prefix}")
-    set(includedir "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}")
-    set(libdir "\${exec_prefix}/${CMAKE_INSTALL_LIBDIR}")
-    set(VERSION "${PROJECT_VERSION}")
+    # GNUInstallDirs provides CMAKE_INSTALL_FULL_* absolute paths even when
+    # the corresponding relative variables contain ${prefix} references.
+    set(PC_PKGDATADIR "${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig")
+
+    # Compute paths relative to the installed .pc file location so that the
+    # whole installation tree stays usable after being moved (relocation).
+    # pcfiledir is a variable built into pkg-config >= 0.20.
+    file(RELATIVE_PATH PC_RELATIVE_LIBDIR "${PC_PKGDATADIR}" "${CMAKE_INSTALL_FULL_LIBDIR}")
+    file(RELATIVE_PATH PC_RELATIVE_INCLUDEDIR "${PC_PKGDATADIR}" "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
+    foreach(_pc_var PC_RELATIVE_LIBDIR PC_RELATIVE_INCLUDEDIR)
+      string(REPLACE "\\" "/" ${_pc_var} "${${_pc_var}}")
+      string(REGEX REPLACE "/+$" "" ${_pc_var} "${${_pc_var}}")
+      if(${_pc_var} STREQUAL "")
+        set(${_pc_var} ".")
+      endif()
+    endforeach()
+    unset(_pc_var)
+
     if(LIBM_REQUIRED)
-      set(LIBS "-lm")
+      set(PC_LIBS_PRIVATE "-lm")
+    else()
+      set(PC_LIBS_PRIVATE "")
     endif()
-    configure_file(../samplerate.pc.in samplerate.pc @ONLY)
+
+    configure_file(${PROJECT_SOURCE_DIR}/cmake/samplerate.pc.cmake samplerate.pc @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/samplerate.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
   endif()
 
