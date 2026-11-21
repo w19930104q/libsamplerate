@@ -82,10 +82,16 @@ linear_vari_process (SRC_STATE *state, SRC_DATA *data)
 
 	input_index = state->last_position ;
 
-	/* Calculate samples before first sample in input array. */
+	/* Calculate samples before first sample in input array. This loop only
+	** interpolates between the held previous value and the first supplied
+	** input frame, so only that single frame has to be available. In
+	** particular it must keep running when exactly one input frame is
+	** supplied (frame-by-frame streaming); the previous >= (1 + index)
+	** condition required a second frame that chunked feeding may not have.
+	*/
 	while (input_index < 1.0 && priv->out_gen < priv->out_count)
 	{
-		if (priv->in_used + state->channels * (1.0 + input_index) >= priv->in_count)
+		if (priv->in_used + state->channels > priv->in_count)
 			break ;
 
 		if (priv->out_count > 0 && fabs (state->last_ratio - data->src_ratio) > SRC_MIN_RATIO_DIFF)
@@ -105,8 +111,16 @@ linear_vari_process (SRC_STATE *state, SRC_DATA *data)
 	priv->in_used += state->channels * psf_lrint (input_index - rem) ;
 	input_index = rem ;
 
-	/* Main processing loop. */
-	while (priv->out_gen < priv->out_count && priv->in_used + state->channels * input_index < priv->in_count)
+	/* Main processing loop. Each output interpolates between the input
+	** frames at (in_used - channels) and in_used, so both frames have to lie
+	** inside the supplied input buffer. The in_used >= channels bound also
+	** guarantees the (in_used - channels) index is never negative; the old
+	** in_used + channels * input_index < in_count guard read one frame past
+	** the buffer when a single frame was supplied.
+	*/
+	while (priv->out_gen < priv->out_count
+			&& priv->in_used >= state->channels
+			&& priv->in_used + state->channels <= priv->in_count)
 	{
 		if (priv->out_count > 0 && fabs (state->last_ratio - data->src_ratio) > SRC_MIN_RATIO_DIFF)
 			src_ratio = state->last_ratio + priv->out_gen * (data->src_ratio - state->last_ratio) / priv->out_count ;

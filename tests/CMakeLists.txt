@@ -68,6 +68,10 @@ target_link_libraries(varispeed_test
    )
 add_test(NAME varispeed_test COMMAND varispeed_test util.c util.h WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src)
 
+add_executable(varispeed_chunk_test varispeed_chunk_test.c util.c util.h)
+target_link_libraries(varispeed_chunk_test PRIVATE samplerate)
+add_test(NAME varispeed_chunk_test COMMAND varispeed_chunk_test WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src)
+
 add_executable(float_short_test float_short_test.c)
 target_link_libraries(float_short_test PRIVATE samplerate)
 add_test(NAME float_short_test COMMAND float_short_test WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src)

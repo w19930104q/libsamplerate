@@ -161,6 +161,21 @@ int_div_ceil (int divident, int divisor) /* == (int) ceil ((float) divident / di
 	return (divident + (divisor - 1)) / divisor ;
 }
 
+/* Largest value half_filter_chan_len can take for this filter/channel count.
+** The per-call value divides by the minimum ratio in effect, so the bound is
+** reached at the smallest legal ratio; see the half_filter_chan_len
+** calculation in the vari_process functions.
+*/
+static inline int
+max_half_filter_chan_len (const SINC_FILTER *filter, int channels)
+{
+	double count = (filter->coeff_half_len + 2.0) / filter->index_inc ;
+
+	count /= (1.0 / SRC_MAX_RATIO) ;
+
+	return channels * ((int) psf_lrint (count) + 1) ;
+} /* max_half_filter_chan_len */
+
 /*----------------------------------------------------------------------------------------
 */
 
@@ -1159,7 +1174,30 @@ prepare_data (SINC_FILTER *filter, int channels, SRC_DATA *data, int half_filter
 {	int len = 0 ;
 
 	if (filter->b_real_end >= 0)
-		return SRC_ERR_NO_ERROR ;	/* Should be terminating. Just return. */
+	{	/* Terminating: no more real input will ever arrive. The zero padding
+		** appended when end of input was flagged was sized for the filter
+		** support required at that time. During draining the ratio may change
+		** (varispeed), which can grow half_filter_chan_len and therefore the
+		** support needed on the right side of each output point. Extend the
+		** zero region to the worst-case support so that the deterministic
+		** b_real_end termination check, rather than a ratio dependent reload
+		** break, decides when conversion stops. b_real_end itself, which marks
+		** the end of the real data, is left untouched.
+		*/
+		int max_half = max_half_filter_chan_len (filter, channels) ;
+		int needed = filter->b_real_end + max_half + 5 ;
+
+		if (needed > filter->b_len)
+			needed = filter->b_len ;
+
+		if (needed > filter->b_end)
+		{	memset (filter->buffer + filter->b_end, 0,
+							(needed - filter->b_end) * sizeof (filter->buffer [0])) ;
+			filter->b_end = needed ;
+			} ;
+
+		return SRC_ERR_NO_ERROR ;
+		} ;
 
 	if (data->data_in == NULL)
 		return SRC_ERR_NO_ERROR ;
@@ -1201,13 +1239,25 @@ prepare_data (SINC_FILTER *filter, int channels, SRC_DATA *data, int half_filter
 	filter->b_end += len ;
 	filter->in_used += len ;
 
-	if (filter->in_used == filter->in_count &&
-			filter->b_end - filter->b_current < 2 * half_filter_chan_len && data->end_of_input)
-	{	/* Handle the case where all data in the current buffer has been
-		** consumed and this is the last buffer.
+	if (filter->in_used == filter->in_count && data->end_of_input)
+	{	/* All real input has been loaded and the caller flagged the end of
+		** input, so finalize the stream. This has to happen regardless of how
+		** much data is already buffered: when a whole buffer of input arrives
+		** in one call the old gap condition below was false and the stream
+		** instead ended through the generic (ratio dependent) reload break,
+		** which produced fewer output frames than frame-by-frame feeding.
+		**
+		** The trailing zero padding has to cover the largest filter support
+		** the stream might need, not just the support at the current ratio:
+		** once end of input is flagged prepare_data() is never asked to load
+		** real data again, and a later varispeed ratio change can grow the
+		** half-filter length. Sizing for the worst case keeps the number of
+		** output frames generated independent of how the input was chunked.
 		*/
+		int term_half = max_half_filter_chan_len (filter, channels) ;
 
-		if (filter->b_len - filter->b_end < half_filter_chan_len + 5)
+		if (filter->b_real_end < 0 &&
+				filter->b_len - filter->b_end < term_half + 5)
 		{	/* If necessary, move data down to the start of the buffer. */
 			len = filter->b_end - filter->b_current ;
 			memmove (filter->buffer, filter->buffer + filter->b_current - half_filter_chan_len,
@@ -1217,14 +1267,17 @@ prepare_data (SINC_FILTER *filter, int channels, SRC_DATA *data, int half_filter
 			filter->b_end = filter->b_current + len ;
 			} ;
 
-		filter->b_real_end = filter->b_end ;
-		len = half_filter_chan_len + 5 ;
+		if (filter->b_real_end < 0)
+		{	filter->b_real_end = filter->b_end ;
 
-		if (len < 0 || filter->b_end + len > filter->b_len)
-			len = filter->b_len - filter->b_end ;
+			len = term_half + 5 ;
 
-		memset (filter->buffer + filter->b_end, 0, len * sizeof (filter->buffer [0])) ;
-		filter->b_end += len ;
+			if (len < 0 || filter->b_end + len > filter->b_len)
+				len = filter->b_len - filter->b_end ;
+
+			memset (filter->buffer + filter->b_end, 0, len * sizeof (filter->buffer [0])) ;
+			filter->b_end += len ;
+			} ;
 		} ;
 
 	return SRC_ERR_NO_ERROR ;
